@@ -2,9 +2,14 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gioCuesta25/employees-manager-backend/config"
+	"github.com/golang-jwt/jwt"
 )
 
 type Server struct {
@@ -34,12 +39,56 @@ func (s *Server) Run() {
 func (s *Server) setupRoutes() {
 
 	// Users
-	s.router.POST("/users", s.createUser)
-	s.router.GET("/users", s.listUsers)
-	s.router.GET("/users/:id", s.getUser)
-	s.router.DELETE("/users/:id", s.deleteUser)
-	s.router.PATCH("/users/:id", s.updateUser)
+	users := s.router.Group("/users")
+	users.Use(s.RequireAuth)
+	users.POST("/", s.createUser)
+	users.GET("/", s.listUsers)
+	users.GET("/:id", s.getUser)
+	users.DELETE("/:id", s.deleteUser)
+	users.PATCH("/:id", s.updateUser)
 
 	//Login
 	s.router.POST("/login", s.login)
+}
+
+func (s *Server) RequireAuth(ctx *gin.Context) {
+	// Get token from cookies or headers
+	authorizationToken := ctx.GetHeader("Authorization")
+
+	if authorizationToken == "" {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization token"})
+		return
+	}
+	tokenString := strings.Split(authorizationToken, "Bearer ")[1]
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.env.JwtSecret), nil
+	})
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Check the exp
+		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "expired token"})
+			return
+		}
+
+		// Find the user with token sub
+
+		// Attach to req
+		ctx.Set("userId", claims["sub"])
+
+		// Continue
+		ctx.Next()
+	} else {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization token"})
+		return
+	}
 }
