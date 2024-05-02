@@ -22,7 +22,7 @@ func main() {
 		log.Fatal("Error connecting to database: ", err.Error())
 	}
 
-	server := api.NewServer(env.ApiPort, db)
+	server := api.NewServer(env, db)
 
 	server.Run()
 

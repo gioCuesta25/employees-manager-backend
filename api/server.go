@@ -4,21 +4,22 @@ import (
 	"database/sql"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gioCuesta25/employees-manager-backend/config"
 )
 
 type Server struct {
-	listedAddr string
-	db         *sql.DB
-	router     *gin.Engine
+	env    config.Environment
+	db     *sql.DB
+	router *gin.Engine
 }
 
-func NewServer(lisenAddr string, db *sql.DB) *Server {
+func NewServer(env config.Environment, db *sql.DB) *Server {
 	r := gin.Default()
 
 	server := &Server{
-		listedAddr: lisenAddr,
-		db:         db,
-		router:     r,
+		env:    env,
+		db:     db,
+		router: r,
 	}
 
 	// Routes
@@ -27,7 +28,7 @@ func NewServer(lisenAddr string, db *sql.DB) *Server {
 }
 
 func (s *Server) Run() {
-	s.router.Run(s.listedAddr)
+	s.router.Run(s.env.ApiPort)
 }
 
 func (s *Server) setupRoutes() {

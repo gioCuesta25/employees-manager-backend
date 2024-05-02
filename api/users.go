@@ -205,14 +205,16 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	//Todo: Implement logic for token generation
+	//Generate jwt token
+	token, err := utils.GetToken(user.ID, s.env.JwtSecret)
+
+	if err != nil {
+		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"user": &models.CreateUserResponse{
-			FullName: user.FullName,
-			Email:    user.Email,
-		},
-		"token": "aquí va el token",
+		"token": token,
 	})
 }
 

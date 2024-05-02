@@ -11,6 +11,7 @@ type Environment struct {
 	DbUser     string `mapstructure:"DB_USER"`
 	DbPassword string `mapstructure:"DB_PASSWORD"`
 	ApiPort    string `mapstructure:"API_PORT"`
+	JwtSecret  string `mapstructure:"JWT_SECRET"`
 }
 
 func LoadEnvironment() (Environment, error) {
