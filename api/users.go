@@ -47,6 +47,7 @@ func (s *Server) listUsers(ctx *gin.Context) {
 	size := 25
 
 	//TODO: Improve pagination
+	//Todo: Add created_at and updated_at in the response
 
 	if value, ok := ctx.GetQuery("page"); ok {
 		conv, err := strconv.Atoi(value)

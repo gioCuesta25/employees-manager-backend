@@ -49,6 +49,18 @@ func (s *Server) setupRoutes() {
 
 	//Login
 	s.router.POST("/login", s.login)
+
+	//Companies
+	companies := s.router.Group("/companies")
+	companies.Use(s.RequireAuth)
+	companies.POST("/", s.createCompany)
+	companies.GET("/:id", s.getCompany)
+	companies.DELETE("/:id", s.deleteCompany)
+	companies.PATCH("/:id", s.updateCompany)
+
+	// Departments
+	departments := s.router.Group("/departments")
+	departments.Use(s.RequireAuth)
 }
 
 func (s *Server) RequireAuth(ctx *gin.Context) {
