@@ -66,6 +66,15 @@ func (s *Server) setupRoutes() {
 	departments.GET("/:companyId", s.getDepartmentsByCompany)
 	departments.PATCH("/:id", s.updateDepartment)
 	departments.DELETE("/:id", s.deleteDepartment)
+
+	// Positions
+	positions := s.router.Group("/positions")
+	positions.Use(s.RequireAuth)
+	positions.POST("/", s.createPosition)
+	positions.GET("/:companyId", s.getPositionsByCompany)
+	positions.GET("/:departmentId", s.getPositionsByDepartment)
+	positions.PATCH("/:id", s.updatePosition)
+	positions.DELETE("/:id", s.deletePosition)
 }
 
 func (s *Server) RequireAuth(ctx *gin.Context) {
