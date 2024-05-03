@@ -51,6 +51,7 @@ func (s *Server) setupRoutes() {
 	s.router.POST("/login", s.login)
 
 	//Companies
+	// Todo: Get companies by user
 	companies := s.router.Group("/companies")
 	companies.Use(s.RequireAuth)
 	companies.POST("/", s.createCompany)
@@ -61,6 +62,10 @@ func (s *Server) setupRoutes() {
 	// Departments
 	departments := s.router.Group("/departments")
 	departments.Use(s.RequireAuth)
+	departments.POST("/", s.createDepartment)
+	departments.GET("/:companyId", s.getDepartmentsByCompany)
+	departments.PATCH("/:id", s.updateDepartment)
+	departments.DELETE("/:id", s.deleteDepartment)
 }
 
 func (s *Server) RequireAuth(ctx *gin.Context) {
