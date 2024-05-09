@@ -42,35 +42,6 @@ func (s *Server) createPosition(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"department": department})
 }
 
-func (s *Server) getPositionsByCompany(ctx *gin.Context) {
-	var params models.GetCompanyPositionsParams
-
-	if err := ctx.ShouldBindUri(&params); err != nil {
-		utils.ErrorResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	query := `SELECT id, name, company_id, department_id, created_at, updated_at FROM positions WHERE company_id = $1`
-
-	rows, err := s.db.Query(query, params.CompanyId)
-
-	positions := make([]*models.PositionResponse, 0)
-
-	for rows.Next() {
-		p, err := scanRowsIntoPosition(rows)
-		if err != nil {
-			utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
-			return
-		}
-		positions = append(positions, p)
-	}
-
-	if err != nil {
-		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"items": positions})
-}
 func (s *Server) getPositionsByDepartment(ctx *gin.Context) {
 	var params models.GetDepartmentPositionsParams
 
