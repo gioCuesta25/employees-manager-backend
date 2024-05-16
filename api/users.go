@@ -182,7 +182,7 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	query := "SELECT * FROM users WHERE email = $1"
+	query := "SELECT id, full_name, email, password FROM users WHERE email = $1"
 
 	row := s.db.QueryRow(query, body.Email)
 

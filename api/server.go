@@ -81,7 +81,7 @@ func (s *Server) setupRoutes() {
 	employees.Use(s.RequireAuth)
 	employees.POST("/", s.createEmployee)
 	employees.GET("/:id", s.getEmployeeById)
-	employees.GET("/:companyId", s.listCompanyEmployees)
+	// employees.GET("/:companyId", s.listCompanyEmployees)
 	employees.PATCH("/:id", s.updateEmployee)
 	employees.DELETE("/:id", s.deleteEmployee)
 }
