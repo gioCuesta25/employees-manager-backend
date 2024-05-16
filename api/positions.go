@@ -2,7 +2,10 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
+	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -42,34 +45,79 @@ func (s *Server) createPosition(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"department": department})
 }
 
-func (s *Server) getPositionsByDepartment(ctx *gin.Context) {
-	var params models.GetDepartmentPositionsParams
+func (s *Server) searchPositions(ctx *gin.Context) {
+	departmentId := ctx.DefaultQuery("department_id", "")
+	companyId := ctx.DefaultQuery("company_id", "")
 
-	if err := ctx.ShouldBindUri(&params); err != nil {
-		utils.ErrorResponse(ctx, err, http.StatusBadRequest)
+	pageNumber, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("size", "10"))
+
+	if departmentId == "" && companyId == "" {
+		utils.ErrorResponse(ctx, fmt.Errorf("at least one param is required"), http.StatusBadRequest)
 		return
 	}
 
-	query := `SELECT id, name, company_id, department_id, created_at, updated_at FROM positions WHERE company_id = $1`
+	query := `SELECT id, name, company_id, department_id, created_at, updated_at
+	FROM positions
+	WHERE ($1 = '' OR department_id = $1) AND ($2 = '' OR company_id = $2)
+	ORDER BY id
+	LIMIT $3
+	OFFSET $4`
 
-	rows, err := s.db.Query(query, params.DepartmentId)
+	offset := (pageNumber - 1) * pageSize
 
-	positions := make([]*models.PositionResponse, 0)
+	rows, err := s.db.Query(query, departmentId, companyId, pageSize, offset)
 
-	for rows.Next() {
-		p, err := scanRowsIntoPosition(rows)
-		if err != nil {
-			utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
-			return
-		}
-		positions = append(positions, p)
+	if err != nil {
+		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
+		return
+
 	}
+
+	totalItemsQuery := `SELECT COUNT(*) FROM positions WHERE ($1 = '' OR department_id = $1) AND ($2 = '' OR company_id = $2)`
+	var totalItems int
+	err = s.db.QueryRow(totalItemsQuery, departmentId, companyId).Scan(&totalItems)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"items": positions})
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(pageSize)))
+	var nextPage, prevPage *int
+
+	if pageNumber < totalPages {
+		nextPageNum := pageNumber + 1
+		nextPage = &nextPageNum
+	}
+
+	if pageNumber > 1 {
+		prevPageNum := pageNumber - 1
+		prevPage = &prevPageNum
+	}
+	var positions []models.PositionResponse
+
+	for rows.Next() {
+		position, err := scanRowsIntoPosition(rows)
+
+		if err != nil {
+			utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
+			return
+		}
+
+		positions = append(positions, *position)
+	}
+
+	result := models.PaginatedResult{
+		Data:       positions,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+		TotalItems: totalItems,
+		NextPage:   nextPage,
+		PrevPage:   prevPage,
+	}
+
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (s *Server) updatePosition(ctx *gin.Context) {

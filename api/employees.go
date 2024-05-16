@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -27,15 +28,42 @@ func (s *Server) createEmployee(ctx *gin.Context) {
 		admission_date,
 		salary,
 		position_id,
+		department_id,
 		company_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, company_id, created_at, updated_at`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, department_id,company_id, created_at, updated_at`
 
-	row := s.db.QueryRow(query, body.Name, body.LastName, body.PhoneNumber, body.Email, body.IdType, body.IdNumber, body.AdmissionDate, body.Salary, body.PositionId, body.CompanyId)
+	row := s.db.QueryRow(
+		query,
+		body.Name,
+		body.LastName,
+		body.PhoneNumber,
+		body.Email,
+		body.IdType,
+		body.IdNumber,
+		body.AdmissionDate,
+		body.Salary,
+		body.PositionId,
+		body.DepartmentId,
+		body.CompanyId)
 
 	var employee models.EmployeeResponse
 
-	err := row.Scan(&employee.ID, &employee.Name, &employee.LastName, &employee.PhoneNumber, &employee.Email, &employee.IdType, &employee.IdNumber, &employee.AdmissionDate, &employee.Salary, &employee.PositionId, &employee.CompanyId, &employee.CreatedAt, &employee.UpdatedAt)
+	err := row.Scan(
+		&employee.ID,
+		&employee.Name,
+		&employee.LastName,
+		&employee.PhoneNumber,
+		&employee.Email,
+		&employee.IdType,
+		&employee.IdNumber,
+		&employee.AdmissionDate,
+		&employee.Salary,
+		&employee.PositionId,
+		&employee.DepartmentId,
+		&employee.CompanyId,
+		&employee.CreatedAt,
+		&employee.UpdatedAt)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
@@ -53,13 +81,27 @@ func (s *Server) getEmployeeById(ctx *gin.Context) {
 		return
 	}
 
-	query := `SELECT id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, company_id, created_at, updated_at FROM employees WHERE id = $1`
+	query := `SELECT id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, department_id,company_id, created_at, updated_at FROM employees WHERE id = $1`
 
 	row := s.db.QueryRow(query, params.ID)
 
 	var employee models.EmployeeResponse
 
-	err := row.Scan(&employee.ID, &employee.Name, &employee.LastName, &employee.PhoneNumber, &employee.Email, &employee.IdType, &employee.IdNumber, &employee.AdmissionDate, &employee.Salary, &employee.PositionId, &employee.CompanyId, &employee.CreatedAt, &employee.UpdatedAt)
+	err := row.Scan(
+		&employee.ID,
+		&employee.Name,
+		&employee.LastName,
+		&employee.PhoneNumber,
+		&employee.Email,
+		&employee.IdType,
+		&employee.IdNumber,
+		&employee.AdmissionDate,
+		&employee.Salary,
+		&employee.PositionId,
+		&employee.DepartmentId,
+		&employee.CompanyId,
+		&employee.CreatedAt,
+		&employee.UpdatedAt)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
@@ -71,18 +113,18 @@ func (s *Server) getEmployeeById(ctx *gin.Context) {
 
 func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 
-	var params models.GetCompanyEmployeesParams
+	companyId := ctx.DefaultQuery("company_id", "")
+
+	if companyId == "" {
+		utils.ErrorResponse(ctx, fmt.Errorf("company_id is required"), http.StatusBadRequest)
+		return
+	}
 
 	// DefaultQuery returns the specified default value if the key is not found in the query string.
 	pageNumber, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("size", "10"))
 
 	offset := (pageNumber - 1) * pageSize
-
-	if err := ctx.ShouldBindUri(&params); err != nil {
-		utils.ErrorResponse(ctx, err, http.StatusBadRequest)
-		return
-	}
 
 	// Query for get all employees associated to a company
 	query := `
@@ -97,6 +139,7 @@ func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 		admission_date, 
 		salary, 
 		position_id, 
+		department_id,
 		company_id, 
 		created_at, 
 		updated_at
@@ -107,7 +150,7 @@ func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 	OFFSET $3
 	`
 
-	rows, err := s.db.Query(query, params.CompanyId, pageSize, offset)
+	rows, err := s.db.Query(query, companyId, pageSize, offset)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
@@ -117,7 +160,7 @@ func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 	// Query for get the total number of employees associated to a company
 	totalItemsQuery := `SELECT COUNT(*) FROM employees WHERE company_id = $1`
 	var totalItems int
-	err = s.db.QueryRow(totalItemsQuery, params.CompanyId).Scan(&totalItems)
+	err = s.db.QueryRow(totalItemsQuery, companyId).Scan(&totalItems)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
@@ -153,6 +196,7 @@ func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 			&employee.AdmissionDate,
 			&employee.Salary,
 			&employee.PositionId,
+			&employee.DepartmentId,
 			&employee.CompanyId,
 			&employee.CreatedAt,
 			&employee.UpdatedAt)
@@ -191,12 +235,26 @@ func (s *Server) updateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	query := `UPDATE employees SET name = $1, last_name = $2, phone_number = $3, email = $4, id_type = $5, id_number = $6, admission_date = $7, salary = $8, position_id = $9, company_id = $10 WHERE id = $11 RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, company_id, created_at, updated_at`
+	query := `UPDATE employees SET name = $1, last_name = $2, phone_number = $3, email = $4, id_type = $5, id_number = $6, admission_date = $7, salary = $8, position_id = $9, department_id = $10, company_id = $11 WHERE id = $12 RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, company_id, created_at, updated_at`
 
 	row := s.db.QueryRow(query, body.Name, body.LastName, body.PhoneNumber, body.Email, body.IdType, body.IdNumber, body.AdmissionDate, body.Salary, body.PositionId, body.CompanyId, params.ID)
 
 	var employee models.EmployeeResponse
-	err := row.Scan(&employee.ID, &employee.Name, &employee.LastName, &employee.PhoneNumber, &employee.Email, &employee.IdType, &employee.IdNumber, &employee.AdmissionDate, &employee.Salary, &employee.PositionId, &employee.CompanyId, &employee.CreatedAt, &employee.UpdatedAt)
+	err := row.Scan(
+		&employee.ID,
+		&employee.Name,
+		&employee.LastName,
+		&employee.PhoneNumber,
+		&employee.Email,
+		&employee.IdType,
+		&employee.IdNumber,
+		&employee.AdmissionDate,
+		&employee.Salary,
+		&employee.PositionId,
+		&employee.DepartmentId,
+		&employee.CompanyId,
+		&employee.CreatedAt,
+		&employee.UpdatedAt)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)

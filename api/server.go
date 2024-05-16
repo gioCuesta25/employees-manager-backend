@@ -71,8 +71,7 @@ func (s *Server) setupRoutes() {
 	positions := s.router.Group("/positions")
 	positions.Use(s.RequireAuth)
 	positions.POST("/", s.createPosition)
-	// positions.GET("/:companyId", s.getPositionsByCompany)
-	positions.GET("/:departmentId", s.getPositionsByDepartment)
+	positions.GET("/", s.searchPositions)
 	positions.PATCH("/:id", s.updatePosition)
 	positions.DELETE("/:id", s.deletePosition)
 
@@ -80,8 +79,8 @@ func (s *Server) setupRoutes() {
 	employees := s.router.Group("/employees")
 	employees.Use(s.RequireAuth)
 	employees.POST("/", s.createEmployee)
+	employees.GET("/", s.listCompanyEmployees)
 	employees.GET("/:id", s.getEmployeeById)
-	// employees.GET("/:companyId", s.listCompanyEmployees)
 	employees.PATCH("/:id", s.updateEmployee)
 	employees.DELETE("/:id", s.deleteEmployee)
 }

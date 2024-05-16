@@ -12,6 +12,7 @@ type CreateEmployeeBody struct {
 	AdmissionDate time.Time `json:"admission_date" binding:"required"`
 	Salary        float64   `json:"salary" binding:"required"`
 	PositionId    string    `json:"position_id" binding:"required"`
+	DepartmentId  string    `json:"department_id" binding:"required"`
 	CompanyId     string    `json:"company_id" binding:"required"`
 }
 
@@ -26,6 +27,7 @@ type EmployeeResponse struct {
 	AdmissionDate time.Time
 	Salary        float64
 	PositionId    string
+	DepartmentId  string
 	CompanyId     string
 	CreatedAt     time.Time
 	UpdatedAt     *time.Time
