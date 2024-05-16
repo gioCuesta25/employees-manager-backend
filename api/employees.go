@@ -29,9 +29,10 @@ func (s *Server) createEmployee(ctx *gin.Context) {
 		salary,
 		position_id,
 		department_id,
-		company_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, department_id,company_id, created_at, updated_at`
+		company_id,
+		picture_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, department_id,company_id, picture_url,created_at, updated_at`
 
 	row := s.db.QueryRow(
 		query,
@@ -45,7 +46,8 @@ func (s *Server) createEmployee(ctx *gin.Context) {
 		body.Salary,
 		body.PositionId,
 		body.DepartmentId,
-		body.CompanyId)
+		body.CompanyId,
+		body.PictureUrl)
 
 	var employee models.EmployeeResponse
 
@@ -62,6 +64,7 @@ func (s *Server) createEmployee(ctx *gin.Context) {
 		&employee.PositionId,
 		&employee.DepartmentId,
 		&employee.CompanyId,
+		&employee.PictureUrl,
 		&employee.CreatedAt,
 		&employee.UpdatedAt)
 
@@ -81,7 +84,28 @@ func (s *Server) getEmployeeById(ctx *gin.Context) {
 		return
 	}
 
-	query := `SELECT id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, department_id,company_id, created_at, updated_at FROM employees WHERE id = $1`
+	query := `
+	SELECT
+		id,
+		name,
+		last_name,
+		phone_number,
+		email,
+		id_type,
+		id_number,
+		admission_date,
+		salary,
+		position_id,
+		department_id,
+		company_id,
+		picture_url,
+		created_at,
+		updated_at
+	FROM
+		employees
+	WHERE
+		id = $1
+	`
 
 	row := s.db.QueryRow(query, params.ID)
 
@@ -141,6 +165,7 @@ func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 		position_id, 
 		department_id,
 		company_id, 
+		picture_url,
 		created_at, 
 		updated_at
 	FROM employees
@@ -198,6 +223,7 @@ func (s *Server) listCompanyEmployees(ctx *gin.Context) {
 			&employee.PositionId,
 			&employee.DepartmentId,
 			&employee.CompanyId,
+			&employee.PictureUrl,
 			&employee.CreatedAt,
 			&employee.UpdatedAt)
 
@@ -235,9 +261,54 @@ func (s *Server) updateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	query := `UPDATE employees SET name = $1, last_name = $2, phone_number = $3, email = $4, id_type = $5, id_number = $6, admission_date = $7, salary = $8, position_id = $9, department_id = $10, company_id = $11 WHERE id = $12 RETURNING id, name, last_name, phone_number, email, id_type, id_number, admission_date, salary, position_id, company_id, created_at, updated_at`
+	query := `
+	UPDATE
+		employees
+	SET
+		name = $1,
+		last_name = $2,
+		phone_number = $3,
+		email = $4,
+		id_type = $5,
+		id_number = $6,
+		admission_date = $7,
+		salary = $8,
+		position_id = $9,
+		department_id = $10,
+		company_id = $11
+		picture_url = $12
+	WHERE
+		id = $13
+	RETURNING id,
+		name,
+		last_name,
+		phone_number,
+		email,
+		id_type,
+		id_number,
+		admission_date,
+		salary,
+		position_id,
+		company_id,
+		picture_url,
+		created_at,
+		updated_at
+	`
 
-	row := s.db.QueryRow(query, body.Name, body.LastName, body.PhoneNumber, body.Email, body.IdType, body.IdNumber, body.AdmissionDate, body.Salary, body.PositionId, body.CompanyId, params.ID)
+	row := s.db.QueryRow(
+		query,
+		body.Name,
+		body.LastName,
+		body.PhoneNumber,
+		body.Email,
+		body.IdType,
+		body.IdNumber,
+		body.AdmissionDate,
+		body.Salary,
+		body.PositionId,
+		body.CompanyId,
+		body.PictureUrl,
+		params.ID)
 
 	var employee models.EmployeeResponse
 	err := row.Scan(
@@ -253,6 +324,7 @@ func (s *Server) updateEmployee(ctx *gin.Context) {
 		&employee.PositionId,
 		&employee.DepartmentId,
 		&employee.CompanyId,
+		&employee.PictureUrl,
 		&employee.CreatedAt,
 		&employee.UpdatedAt)
 

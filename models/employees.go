@@ -14,6 +14,7 @@ type CreateEmployeeBody struct {
 	PositionId    string    `json:"position_id" binding:"required"`
 	DepartmentId  string    `json:"department_id" binding:"required"`
 	CompanyId     string    `json:"company_id" binding:"required"`
+	PictureUrl    *string   `json:"picture_url"`
 }
 
 type EmployeeResponse struct {
@@ -29,6 +30,7 @@ type EmployeeResponse struct {
 	PositionId    string
 	DepartmentId  string
 	CompanyId     string
+	PictureUrl    *string
 	CreatedAt     time.Time
 	UpdatedAt     *time.Time
 }
