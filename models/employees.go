@@ -38,12 +38,3 @@ type GetEmployeeParams struct {
 type GetCompanyEmployeesParams struct {
 	CompanyId string `uri:"companyId" binding:"required"`
 }
-
-type PaginatedResult struct {
-	Data       []EmployeeResponse `json:"data"`
-	PageNumber int                `json:"pageNumber"`
-	PageSize   int                `json:"pageSize"`
-	TotalItems int                `json:"totalItems"`
-	NextPage   *int               `json:"nextPage"`
-	PrevPage   *int               `json:"prevPage"`
-}

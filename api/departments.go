@@ -2,7 +2,9 @@ package api
 
 import (
 	"database/sql"
+	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -44,14 +46,46 @@ func (s *Server) createDepartment(ctx *gin.Context) {
 func (s *Server) getDepartmentsByCompany(ctx *gin.Context) {
 	var params models.GetCompanyDepartmentsParams
 
+	pageNumber, _ := strconv.Atoi(ctx.DefaultQuery("size", "1"))
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page", "10"))
+
+	offset := (pageNumber - 1) * pageSize
+
 	if err := ctx.ShouldBindUri(&params); err != nil {
 		utils.ErrorResponse(ctx, err, http.StatusBadRequest)
 		return
 	}
 
-	query := `SELECT id, name, company_id, created_at, updated_at FROM departments WHERE id = $1`
+	query := `SELECT id, name, company_id, created_at, updated_at FROM departments WHERE id = $1 ORDER BY id LIMIT $2 OFFSET $3`
 
-	rows, err := s.db.Query(query, params.CompanyId)
+	rows, err := s.db.Query(query, params.CompanyId, pageSize, offset)
+
+	if err != nil {
+		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	totalItemsQuery := `SELECT COUNT(*) FROM departments WHERE company_id = $1`
+	var totalItems int
+	err = s.db.QueryRow(totalItemsQuery, params.CompanyId).Scan(&totalItems)
+
+	if err != nil {
+		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
+		return
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(pageSize)))
+	var nextPage, prevPage *int
+
+	if pageNumber < totalPages {
+		nextPageNum := pageNumber + 1
+		nextPage = &nextPageNum
+	}
+
+	if pageNumber > 1 {
+		prevPageNum := pageNumber - 1
+		prevPage = &prevPageNum
+	}
 
 	departments := make([]*models.DepartmentsResponse, 0)
 
@@ -64,14 +98,17 @@ func (s *Server) getDepartmentsByCompany(ctx *gin.Context) {
 		departments = append(departments, d)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"items": departments})
-
-	if err != nil {
-		utils.ErrorResponse(ctx, err, http.StatusInternalServerError)
-		return
+	result := models.PaginatedResult{
+		Data:       departments,
+		PageNumber: pageNumber,
+		PageSize:   pageSize,
+		TotalItems: totalItems,
+		NextPage:   nextPage,
+		PrevPage:   prevPage,
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"items": departments})
+	ctx.JSON(http.StatusOK, result)
+
 }
 
 func (s *Server) updateDepartment(ctx *gin.Context) {
