@@ -37,6 +37,7 @@ func (s *Server) Run() {
 }
 
 func (s *Server) setupRoutes() {
+
 	//Companies
 	// Todo: Get companies by user
 	companies := s.router.Group("/companies")

@@ -4,7 +4,7 @@ import "time"
 
 type CreateCompanyBody struct {
 	Name    string `json:"name" binding:"required"`
-	Owner   string `json:"owner" binding:"required"`
+	Owner   int    `json:"owner" binding:"required"`
 	Address string `json:"address" binding:"required"`
 	Phone   string `json:"phone" binding:"required"`
 	Email   string `json:"email" binding:"required"`
@@ -17,7 +17,7 @@ type GetCompanyParams struct {
 type CompanyResponse struct {
 	ID        string     `json:"id"`
 	Name      string     `json:"name"`
-	Owner     string     `json:"owner"`
+	Owner     int        `json:"owner"`
 	Address   string     `json:"address"`
 	Phone     string     `json:"phone"`
 	Email     string     `json:"email"`
