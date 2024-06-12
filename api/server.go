@@ -38,6 +38,11 @@ func (s *Server) Run() {
 
 func (s *Server) setupRoutes() {
 
+	// Auth
+	user := s.router.Group("/users")
+	user.POST("/register", s.signUp)
+	user.POST("/login", s.login)
+
 	//Companies
 	// Todo: Get companies by user
 	companies := s.router.Group("/companies")

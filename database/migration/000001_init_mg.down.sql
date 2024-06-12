@@ -3,7 +3,4 @@ DROP TABLE id_types;
 DROP TABLE positions;
 DROP TABLE departments;
 DROP TABLE companies;
-DROP TABLE verification_token;
-DROP TABLE accounts;
-DROP TABLE sessions;
 DROP TABLE users;
